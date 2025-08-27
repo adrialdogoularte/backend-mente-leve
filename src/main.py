@@ -1,0 +1,97 @@
+import os
+import sys
+# DON\'T CHANGE THIS !!!
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+from flask import Flask, send_from_directory, jsonify
+from flask_jwt_extended import JWTManager
+from flask_cors import CORS
+from datetime import timedelta
+
+# Importar modelos
+from src.models.user import db
+from src.models.avaliacao import Avaliacao  # noqa: F401 (garante criação da tabela)
+from src.models.compartilhamento import Compartilhamento  # noqa: F401
+from src.models.humor import RegistroHumor  # noqa: F401
+
+# Importar blueprints
+from src.routes.user import user_bp
+from src.routes.auth import auth_bp, revoked_tokens
+from src.routes.avaliacoes import avaliacoes_bp
+from src.routes.compartilhamentos import compartilhamentos_bp
+from src.routes.humor import humor_bp
+
+app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
+
+# Configurações
+app.config['SECRET_KEY'] = 'mente-leve-secret-key-2024'
+app.config['JWT_SECRET_KEY'] = 'jwt-secret-key-mente-leve'
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+
+# Configuração do banco de dados (SQLite local)
+db_path = os.path.join(os.path.dirname(__file__), 'database', 'app.db')
+os.makedirs(os.path.dirname(db_path), exist_ok=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Inicializar extensões
+db.init_app(app)
+jwt = JWTManager(app)
+# CORS para o frontend em Vite (porta 5173)
+CORS(app, origins=['http://localhost:5173', 'http://127.0.0.1:5173'], supports_credentials=True )
+
+# Registrar blueprints
+app.register_blueprint(user_bp, url_prefix='/api')
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
+app.register_blueprint(avaliacoes_bp, url_prefix='/api/avaliacoes')
+app.register_blueprint(compartilhamentos_bp, url_prefix='/api/compartilhamentos')
+app.register_blueprint(humor_bp, url_prefix='/api/humor')
+
+# Criar tabelas
+with app.app_context():
+    db.create_all()
+
+# Callbacks JWT
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    jti = jwt_payload['jti']
+    return jti in revoked_tokens
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return jsonify({'message': 'Token expirado'}), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    return jsonify({'message': 'Token inválido'}), 401
+
+@jwt.unauthorized_loader
+def missing_token_callback(error):
+    return jsonify({'message': 'Token de acesso necessário'}), 401
+
+# Rota de health check
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'ok', 'message': 'Mente Leve API está funcionando'}), 200
+
+# Servir arquivo estático (caso use build no futuro)
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    static_folder_path = app.static_folder
+    if static_folder_path is None:
+        return 'Static folder not configured', 404
+
+    full_path = os.path.join(static_folder_path, path)
+    if path != '' and os.path.exists(full_path):
+        return send_from_directory(static_folder_path, path)
+    else:
+        index_path = os.path.join(static_folder_path, 'index.html')
+        if os.path.exists(index_path):
+            return send_from_directory(static_folder_path, 'index.html')
+        else:
+            return 'index.html not found', 404
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
