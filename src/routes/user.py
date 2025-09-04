@@ -10,7 +10,7 @@ def obter_perfil():
     """Obtém o perfil do usuário atual"""
     try:
         current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
+        user = User.query.get(int(current_user_id))  # Converter para int
         
         if not user:
             return jsonify({'message': 'Usuário não encontrado'}), 404
@@ -26,7 +26,7 @@ def atualizar_perfil():
     """Atualiza o perfil do usuário atual"""
     try:
         current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
+        user = User.query.get(int(current_user_id))  # Converter para int
         
         if not user:
             return jsonify({'message': 'Usuário não encontrado'}), 404

@@ -40,11 +40,11 @@ def registro_aluno():
         
         # Criar tokens
         access_token = create_access_token(
-            identity=user.id,
+            identity=str(user.id),  # Converter para string
             expires_delta=timedelta(hours=1)
         )
         refresh_token = create_refresh_token(
-            identity=user.id,
+            identity=str(user.id),  # Converter para string
             expires_delta=timedelta(days=30)
         )
         
@@ -89,11 +89,11 @@ def registro_psicologo():
         
         # Criar tokens
         access_token = create_access_token(
-            identity=user.id,
+            identity=str(user.id),  # Converter para string
             expires_delta=timedelta(hours=1)
         )
         refresh_token = create_refresh_token(
-            identity=user.id,
+            identity=str(user.id),  # Converter para string
             expires_delta=timedelta(days=30)
         )
         
@@ -127,11 +127,11 @@ def login():
         
         # Criar tokens
         access_token = create_access_token(
-            identity=user.id,
+            identity=str(user.id),  # Converter para string
             expires_delta=timedelta(hours=1)
         )
         refresh_token = create_refresh_token(
-            identity=user.id,
+            identity=str(user.id),  # Converter para string
             expires_delta=timedelta(days=30)
         )
         
@@ -151,7 +151,7 @@ def refresh():
     """Renova o token de acesso"""
     try:
         current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
+        user = User.query.get(int(current_user_id))  # Converter para int
         
         if not user or not user.ativo:
             return jsonify({"message": "Usuário não encontrado ou inativo"}), 404
@@ -181,7 +181,7 @@ def refresh_with_body():
             return jsonify({"message": "Token inválido (não é refresh)"}), 401
 
         user_id = decoded.get("sub")
-        user = User.query.get(user_id)
+        user = User.query.get(int(user_id))  # Converter para int
         if not user or not user.ativo:
             return jsonify({"message": "Usuário não encontrado ou inativo"}), 404
 
@@ -210,7 +210,7 @@ def get_current_user():
     """Obtém informações do usuário atual"""
     try:
         current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
+        user = User.query.get(int(current_user_id))  # Converter para int
         
         if not user:
             return jsonify({"message": "Usuário não encontrado"}), 404
