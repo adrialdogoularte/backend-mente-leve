@@ -1,6 +1,6 @@
 import os
 import sys
-# DON\'T CHANGE THIS !!!
+# DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, send_from_directory, jsonify
@@ -9,7 +9,8 @@ from flask_cors import CORS
 from datetime import timedelta
 
 # Importar modelos
-from src.models.user import db
+from src.extensions import db
+from src.models.user import User
 from src.models.avaliacao import Avaliacao  # noqa: F401 (garante criação da tabela)
 from src.models.compartilhamento import Compartilhamento  # noqa: F401
 from src.models.humor import RegistroHumor  # noqa: F401
@@ -39,7 +40,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 jwt = JWTManager(app)
 # CORS para o frontend em Vite (porta 5173)
-CORS(app, origins=['http://localhost:5173', 'http://127.0.0.1:5173'], supports_credentials=True )
+CORS(app, origins=['http://localhost:5173', 'http://127.0.0.1:5173'], supports_credentials=True  )
 
 # Registrar blueprints
 app.register_blueprint(user_bp, url_prefix='/api')

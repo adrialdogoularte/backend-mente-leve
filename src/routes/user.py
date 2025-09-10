@@ -57,8 +57,36 @@ def atualizar_perfil():
         if user.tipo_usuario == 'psicologo':
             if 'crp' in data:
                 user.crp = data['crp']
+            
+            # Tratar especialidades - aceitar tanto 'especialidade' quanto 'especialidades'
             if 'especialidade' in data:
-                user.especialidade = data['especialidade']
+                # Se vier como string, converter para lista
+                especialidade_input = data['especialidade']
+                if isinstance(especialidade_input, str):
+                    # Se for string separada por vírgulas, dividir em lista
+                    if ',' in especialidade_input:
+                        user.especialidades = [esp.strip() for esp in especialidade_input.split(',') if esp.strip()]
+                    else:
+                        # Se for uma única especialidade, criar lista com um item
+                        user.especialidades = [especialidade_input.strip()] if especialidade_input.strip() else []
+                elif isinstance(especialidade_input, list):
+                    # Se já for lista, usar diretamente
+                    user.especialidades = especialidade_input
+                else:
+                    user.especialidades = []
+            
+            if 'especialidades' in data:
+                # Se vier como lista diretamente
+                if isinstance(data['especialidades'], list):
+                    user.especialidades = data['especialidades']
+                elif isinstance(data['especialidades'], str):
+                    # Se vier como string, dividir por vírgulas
+                    if ',' in data['especialidades']:
+                        user.especialidades = [esp.strip() for esp in data['especialidades'].split(',') if esp.strip()]
+                    else:
+                        user.especialidades = [data['especialidades'].strip()] if data['especialidades'].strip() else []
+                else:
+                    user.especialidades = []
         
         db.session.commit()
         
