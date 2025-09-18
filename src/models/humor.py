@@ -1,4 +1,4 @@
-from src.models.user import db
+from src.extensions import db
 from datetime import datetime
 import json
 
@@ -19,12 +19,18 @@ class RegistroHumor(db.Model):
     # Atividades realizadas
     atividades = db.Column(db.Text)  # JSON array das atividades
     
+    # Atividades planejadas para o próximo dia
+    atividades_planejadas = db.Column(db.Text)  # JSON array das atividades planejadas
+    
     # Qualidade do sono (opcional)
     horas_sono = db.Column(db.Float)
     qualidade_sono = db.Column(db.Integer)  # 1-5
     
     # Nível de estresse (opcional)
     nivel_estresse = db.Column(db.Integer)  # 1-5
+    
+    # Notas adicionais
+    notas = db.Column(db.Text)  # Campo para notas adicionais do usuário
     
     # Campos de controle
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
@@ -57,6 +63,14 @@ class RegistroHumor(db.Model):
         """Obtém as atividades realizadas"""
         return json.loads(self.atividades) if self.atividades else []
     
+    def set_atividades_planejadas(self, atividades_list):
+        """Define as atividades planejadas"""
+        self.atividades_planejadas = json.dumps(atividades_list) if atividades_list else None
+    
+    def get_atividades_planejadas(self):
+        """Obtém as atividades planejadas"""
+        return json.loads(self.atividades_planejadas) if self.atividades_planejadas else []
+    
     def to_dict(self):
         """Converte o registro para dicionário"""
         return {
@@ -67,9 +81,11 @@ class RegistroHumor(db.Model):
             'descricao': self.descricao,
             'fatores_influencia': self.get_fatores_influencia(),
             'atividades': self.get_atividades(),
+            'atividades_planejadas': self.get_atividades_planejadas(),
             'horas_sono': self.horas_sono,
             'qualidade_sono': self.qualidade_sono,
             'nivel_estresse': self.nivel_estresse,
+            'notas': self.notas,
             'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
             'data_registro': self.data_registro.isoformat() if self.data_registro else None
         }

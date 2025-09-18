@@ -1,6 +1,6 @@
 import os
 import sys
-# DON'T CHANGE THIS !!!
+# DON\'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, send_from_directory, jsonify
@@ -40,14 +40,22 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 jwt = JWTManager(app)
 # CORS para o frontend em Vite (porta 5173)
-CORS(app, origins=['http://localhost:5173', 'http://127.0.0.1:5173'], supports_credentials=True  )
+CORS(app, origins=['http://localhost:5173', 'http://127.0.0.1:5173', 'https://5173-iuf2yluhtv4cnzto7euul-61c0e69f.manusvm.computer', 'http://localhost:5000', 'http://127.0.0.1:5000'], supports_credentials=True ) # Adicionado localhost:5000 e 127.0.0.1:5000 para compatibilidade
 
 # Registrar blueprints
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(avaliacoes_bp, url_prefix='/api/avaliacoes')
 app.register_blueprint(compartilhamentos_bp, url_prefix='/api/compartilhamentos')
-app.register_blueprint(humor_bp, url_prefix='/api/humor')
+app.register_blueprint(humor_bp, url_prefix='/api') # ALTERADO AQUI
+
+# Importar e registrar blueprint de lembretes
+from src.routes.lembretes import lembretes_bp
+app.register_blueprint(lembretes_bp, url_prefix='/api')
+
+# Importar e registrar blueprint de analytics
+from src.routes.analytics import analytics_bp
+app.register_blueprint(analytics_bp, url_prefix='/api')
 
 # Criar tabelas
 with app.app_context():
