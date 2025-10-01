@@ -20,6 +20,7 @@ class User(db.Model):
     crp = db.Column(db.String(20))
     especialidades = db.Column(db.JSON)
     modalidades_atendimento = db.Column(db.JSON) # Ex: ["online", "presencial"]
+    disponibilidade = db.Column(db.JSON) # Ex: {"segunda": ["09:00", "10:00"], "terca": ["14:00"]}
     
     # Campos de controle
     ativo = db.Column(db.Boolean, default=True)
@@ -47,6 +48,7 @@ class User(db.Model):
             'crp': self.crp,
             'especialidades': self.especialidades,
             'modalidades_atendimento': self.modalidades_atendimento,
+            'disponibilidade': self.disponibilidade,
             'ativo': self.ativo,
             'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
             'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None

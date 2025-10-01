@@ -88,8 +88,10 @@ def registro_psicologo():
             tipo_usuario="psicologo",
             crp=data["crp"],
             especialidades=data["especialidades"],
-            modalidades_atendimento=data["modalidades_atendimento"]
+            modalidades_atendimento=data["modalidades_atendimento"],
+            disponibilidade=data.get("disponibilidade", {}) # Adicionar disponibilidade
         )
+        
         user.set_password(data["senha"])
         
         db.session.add(user)
@@ -227,3 +229,23 @@ def get_current_user():
         
     except Exception as e:
         return jsonify({"message": f"Erro interno: {str(e)}"}), 500
+
+@auth_bp.route("/psicologo/disponibilidade", methods=["PUT"])
+@jwt_required()
+def update_psicologo_disponibilidade():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(int(current_user_id))
+
+    if not user or user.tipo_usuario != "psicologo":
+        return jsonify({"message": "Acesso negado. Somente psicólogos podem atualizar a disponibilidade."}), 403
+
+    data = request.get_json()
+    disponibilidade = data.get("disponibilidade")
+
+    if not isinstance(disponibilidade, dict):
+        return jsonify({"message": "Formato de disponibilidade inválido."}), 400
+
+    user.disponibilidade = disponibilidade
+    db.session.commit()
+
+    return jsonify({"message": "Disponibilidade atualizada com sucesso", "user": user.to_dict()}), 200

@@ -39,6 +39,25 @@ def create_agendamento():
     except ValueError:
         return jsonify({"message": "Formato de data ou hora inválido. Use YYYY-MM-DD e HH:MM"}), 400
 
+    # Verificar se o psicólogo tem disponibilidade para a data e hora
+    dia_semana = data_agendamento.strftime("%A").lower() # Ex: "monday"
+    if psicologo.disponibilidade and dia_semana in psicologo.disponibilidade:
+        horarios_disponiveis_no_dia = psicologo.disponibilidade[dia_semana]
+        if hora_agendamento_str not in horarios_disponiveis_no_dia:
+            return jsonify({"message": "Horário selecionado não está disponível na agenda do psicólogo."}), 400
+    else:
+        return jsonify({"message": "Psicólogo não tem disponibilidade para o dia selecionado."}), 400
+
+    # Verificar se já existe um agendamento para o mesmo psicólogo, data e hora
+    agendamento_existente = Agendamento.query.filter_by(
+        psicologo_id=psicologo_id,
+        data_agendamento=data_agendamento,
+        hora_agendamento=hora_agendamento
+    ).first()
+
+    if agendamento_existente:
+        return jsonify({"message": "Este horário já está agendado. Por favor, escolha outro."}), 409
+
     novo_agendamento = Agendamento(
         aluno_id=aluno.id,
         psicologo_id=psicologo.id,
@@ -69,20 +88,28 @@ def get_my_agendamentos():
     else:
         return jsonify({"message": "Tipo de usuário inválido para agendamentos"}), 403
 
-    return jsonify([agendamento.to_dict() for agendamento in agendamentos]), 200
+    agendamentos_list = []
+    for agendamento in agendamentos:
+        agendamento_dict = agendamento.to_dict()
+        aluno = User.query.get(agendamento.aluno_id)
+        psicologo = User.query.get(agendamento.psicologo_id)
+        agendamento_dict["aluno_nome"] = aluno.nome if aluno else "Desconhecido"
+        agendamento_dict["psicologo_nome"] = psicologo.nome if psicologo else "Desconhecido"
+        agendamentos_list.append(agendamento_dict)
+
+    return jsonify(agendamentos_list), 200
 
 @agendamentos_bp.route("/psicologos", methods=["GET"])
-def get_psicologos():
+def get_psicologos_api():
     psicologos = User.query.filter_by(tipo_usuario="psicologo", ativo=True).all()
     return jsonify([
         {
             "id": p.id,
             "name": p.nome,
             "specialty": p.especialidades[0] if p.especialidades else "Geral", # Assumindo que especialidades é uma lista
-            "availability": "", # Será preenchido no frontend ou por outra lógica
+            "availability": p.disponibilidade if p.disponibilidade else {},
             "description": "", # Será preenchido no frontend ou por outra lógica
             "modes": p.modalidades_atendimento if p.modalidades_atendimento else []
         }
         for p in psicologos
     ]), 200
-
