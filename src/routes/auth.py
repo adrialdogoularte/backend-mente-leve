@@ -67,8 +67,15 @@ def registro_psicologo():
         
         # Validar dados obrigatórios para psicólogo
         required_fields = ["nome", "email", "senha", "crp"]
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({"message": f"Campo {field} é obrigatório"}), 400
+
         if not data.get("especialidades") or not isinstance(data.get("especialidades"), list) or len(data.get("especialidades")) == 0:
             return jsonify({"message": "Pelo menos uma especialidade é obrigatória"}), 400
+        
+        if not data.get("modalidades_atendimento") or not isinstance(data.get("modalidades_atendimento"), list) or len(data.get("modalidades_atendimento")) == 0:
+            return jsonify({"message": "Pelo menos uma modalidade de atendimento é obrigatória"}), 400
         
         # Verificar se email já existe
         if User.query.filter_by(email=data["email"]).first():
@@ -80,7 +87,8 @@ def registro_psicologo():
             email=data["email"],
             tipo_usuario="psicologo",
             crp=data["crp"],
-            especialidades=data["especialidades"]
+            especialidades=data["especialidades"],
+            modalidades_atendimento=data["modalidades_atendimento"]
         )
         user.set_password(data["senha"])
         

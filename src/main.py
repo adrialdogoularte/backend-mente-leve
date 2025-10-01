@@ -14,6 +14,7 @@ from src.models.user import User
 from src.models.avaliacao import Avaliacao  # noqa: F401 (garante criação da tabela)
 from src.models.compartilhamento import Compartilhamento  # noqa: F401
 from src.models.humor import RegistroHumor  # noqa: F401
+from src.models.agendamento import Agendamento # noqa: F401
 
 # Importar blueprints
 from src.routes.user import user_bp
@@ -21,6 +22,7 @@ from src.routes.auth import auth_bp, revoked_tokens
 from src.routes.avaliacoes import avaliacoes_bp
 from src.routes.compartilhamentos import compartilhamentos_bp
 from src.routes.humor import humor_bp
+from src.routes.agendamentos import agendamentos_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 
@@ -46,9 +48,9 @@ CORS(app, origins=['http://localhost:5173', 'http://127.0.0.1:5173', 'https://51
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(avaliacoes_bp, url_prefix='/api/avaliacoes')
-app.register_blueprint(compartilhamentos_bp, url_prefix='/api/compartilhamentos')
-app.register_blueprint(humor_bp, url_prefix='/api') # ALTERADO AQUI
-
+app.register_blueprint(compartilhamentos_bp, url_prefix="/api/compartilhamentos")
+app.register_blueprint(humor_bp, url_prefix="/api") # ALTERADO AQUI
+app.register_blueprint(agendamentos_bp, url_prefix="/api")
 # Importar e registrar blueprint de lembretes
 from src.routes.lembretes import lembretes_bp
 app.register_blueprint(lembretes_bp, url_prefix='/api')

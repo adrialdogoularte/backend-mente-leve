@@ -19,6 +19,7 @@ class User(db.Model):
     # Campos específicos para psicólogos
     crp = db.Column(db.String(20))
     especialidades = db.Column(db.JSON)
+    modalidades_atendimento = db.Column(db.JSON) # Ex: ["online", "presencial"]
     
     # Campos de controle
     ativo = db.Column(db.Boolean, default=True)
@@ -45,6 +46,7 @@ class User(db.Model):
             'periodo': self.periodo,
             'crp': self.crp,
             'especialidades': self.especialidades,
+            'modalidades_atendimento': self.modalidades_atendimento,
             'ativo': self.ativo,
             'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
             'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None
