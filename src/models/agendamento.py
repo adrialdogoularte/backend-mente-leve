@@ -11,6 +11,7 @@ class Agendamento(db.Model):
     hora_agendamento = db.Column(db.Time, nullable=False)
     modalidade = db.Column(db.String(50), nullable=False) # 'online' ou 'presencial'
     notas = db.Column(db.Text)
+    permitir_acesso_avaliacoes = db.Column(db.Boolean, default=False)
     status = db.Column(db.String(50), default='Pendente') # 'Pendente', 'Confirmado', 'Cancelado'
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -27,6 +28,7 @@ class Agendamento(db.Model):
             'hora_agendamento': self.hora_agendamento.isoformat() if self.hora_agendamento else None,
             'modalidade': self.modalidade,
             'notas': self.notas,
+            'permitir_acesso_avaliacoes': self.permitir_acesso_avaliacoes,
             'status': self.status,
             'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
             'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None

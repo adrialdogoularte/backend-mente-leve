@@ -20,7 +20,7 @@ class Avaliacao(db.Model):
     recomendacoes = db.Column(db.Text)  # JSON das recomendações
     
     # Campos de controle
-    data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
+    data_criacao = db.Column(db.DateTime, default=lambda: datetime.now())
     compartilhada = db.Column(db.Boolean, default=False)
     
     # Relacionamentos
@@ -139,4 +139,3 @@ class Avaliacao(db.Model):
     
     def __repr__(self):
         return f'<Avaliacao {self.id} - {self.nivel_risco}>'
-

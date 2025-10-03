@@ -22,6 +22,7 @@ def create_agendamento():
     hora_agendamento_str = data.get("hora_agendamento")
     modalidade = data.get("modalidade")
     notas = data.get("notas")
+    permitir_acesso_avaliacoes = data.get("permitir_acesso_avaliacoes", False)
 
     if not all([psicologo_id, data_agendamento_str, hora_agendamento_str, modalidade]):
         return jsonify({"message": "Dados de agendamento incompletos"}), 400
@@ -64,7 +65,8 @@ def create_agendamento():
         data_agendamento=data_agendamento,
         hora_agendamento=hora_agendamento,
         modalidade=modalidade,
-        notas=notas
+        notas=notas,
+        permitir_acesso_avaliacoes=permitir_acesso_avaliacoes
     )
 
     db.session.add(novo_agendamento)
@@ -113,3 +115,4 @@ def get_psicologos_api():
         }
         for p in psicologos
     ]), 200
+

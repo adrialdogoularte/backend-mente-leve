@@ -21,7 +21,7 @@ def criar_avaliacao():
         recomendacoes_json = json.dumps(data.get("recomendacoes", {}))
 
         nova_avaliacao = Avaliacao(
-            user_id=user_id,
+            usuario_id=user_id,
             pontuacao_total=data.get("pontuacao_total"),
             nivel_risco=data.get("nivel_risco"),
             respostas=respostas_json,
@@ -38,6 +38,5 @@ def criar_avaliacao():
 @jwt_required()
 def get_avaliacoes():
     user_id = get_jwt_identity()
-    avaliacoes = Avaliacao.query.filter_by(user_id=user_id).order_by(Avaliacao.data_criacao.desc()).all()
+    avaliacoes = Avaliacao.query.filter_by(usuario_id=user_id).order_by(Avaliacao.data_criacao.desc()).all()
     return jsonify({"avaliacoes": [avaliacao.to_dict() for avaliacao in avaliacoes]}), 200
-
