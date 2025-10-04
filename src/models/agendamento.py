@@ -15,6 +15,7 @@ class Agendamento(db.Model):
     status = db.Column(db.String(50), default='Pendente') # 'Pendente', 'Confirmado', 'Cancelado'
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    link_videoconferencia = db.Column(db.String(255), nullable=True) # Novo campo para o link da videochamada
 
     aluno = db.relationship('User', foreign_keys=[aluno_id], backref='agendamentos_feitos')
     psicologo = db.relationship('User', foreign_keys=[psicologo_id], backref='agendamentos_recebidos')
@@ -31,7 +32,8 @@ class Agendamento(db.Model):
             'permitir_acesso_avaliacoes': self.permitir_acesso_avaliacoes,
             'status': self.status,
             'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
-            'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None
+            'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None,
+            'link_videoconferencia': self.link_videoconferencia
         }
 
     def __repr__(self):

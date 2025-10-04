@@ -31,7 +31,11 @@ def registro_aluno():
             tipo_usuario="aluno",
             universidade=data["universidade"],
             curso=data["curso"],
-            periodo=data["periodo"]
+            periodo=data["periodo"],
+            crp=None, # Definir como None para alunos
+            especialidades=[], # Definir como lista vazia para alunos
+            modalidades_atendimento=[], # Definir como lista vazia para alunos
+            disponibilidade={} # Definir como dicionário vazio para alunos
         )
         user.set_password(data["senha"])
         

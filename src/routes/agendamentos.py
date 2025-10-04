@@ -4,6 +4,7 @@ from src.extensions import db
 from src.models.agendamento import Agendamento
 from src.models.user import User
 from datetime import datetime
+import uuid
 
 agendamentos_bp = Blueprint("agendamentos", __name__)
 
@@ -59,6 +60,13 @@ def create_agendamento():
     if agendamento_existente:
         return jsonify({"message": "Este horário já está agendado. Por favor, escolha outro."}), 409
 
+    link_videoconferencia = None
+    if modalidade == 'online':
+        # Gerar um link único para a sala Jitsi Meet
+        # Usamos um UUID para garantir a unicidade da sala
+        room_name = f"MenteLeve-{uuid.uuid4().hex}"
+        link_videoconferencia = f"https://meet.jit.si/{room_name}"
+
     novo_agendamento = Agendamento(
         aluno_id=aluno.id,
         psicologo_id=psicologo.id,
@@ -66,8 +74,10 @@ def create_agendamento():
         hora_agendamento=hora_agendamento,
         modalidade=modalidade,
         notas=notas,
-        permitir_acesso_avaliacoes=permitir_acesso_avaliacoes
+        permitir_acesso_avaliacoes=permitir_acesso_avaliacoes,
+        link_videoconferencia=link_videoconferencia
     )
+
 
     db.session.add(novo_agendamento)
     db.session.commit()
