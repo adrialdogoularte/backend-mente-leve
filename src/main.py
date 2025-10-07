@@ -1,7 +1,7 @@
 import os
 import sys
-# DON'T CHANGE THIS !!!
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+# DON\'T CHANGE THIS !!!
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__ )))
 
 from flask import Flask, send_from_directory, jsonify
 from flask_jwt_extended import JWTManager
@@ -42,8 +42,22 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Inicializar extensões
 db.init_app(app)
 jwt = JWTManager(app)
-# CORS para o frontend em Vite (porta 5173)
-CORS(app, origins=['http://localhost:5173', 'http://127.0.0.1:5173', 'https://5173-iuf2yluhtv4cnzto7euul-61c0e69f.manusvm.computer', 'http://localhost:5000', 'http://127.0.0.1:5000'], supports_credentials=True   ) # Adicionado localhost:5000 e 127.0.0.1:5000 para compatibilidade
+# CORS configurado para permitir todas as origens durante desenvolvimento
+# ATENÇÃO: Em produção, configure origens específicas por segurança
+CORS(app, origins=[
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:5000',
+    'http://127.0.0.1:5000',
+    'http://192.168.5.237:5173', # Adicionar o IP específico do frontend
+    'http://192.168.5.237:5000', # Adicionar o IP específico do backend
+    # Adicione outros IPs da rede local se necessário, seguindo o padrão:
+    # r'http://192\\.168\\.\\d+\\.\\d+:5173',
+    # r'http://10\\.\\d+\\.\\d+\\.\\d+:5173',
+    # r'http://172\\.(1[6-9]|2[0-9]|3[01] )\\.\\d+\\.\\d+:5173',
+    # Para o Manus VM
+    'https://5173-iuf2yluhtv4cnzto7euul-61c0e69f.manusvm.computer'
+], supports_credentials=True )
 
 # Registrar blueprints
 app.register_blueprint(user_bp, url_prefix='/api')
@@ -60,14 +74,20 @@ app.register_blueprint(lembretes_bp, url_prefix='/api')
 from src.routes.analytics import analytics_bp
 app.register_blueprint(analytics_bp, url_prefix='/api')
 
-# Importar e registrar blueprint de avaliações de agendamento
-app.register_blueprint(avaliacoes_agendamento_bp, url_prefix='/api') # Registrar o blueprint
+# Registrar o blueprint de avaliações de agendamento
+app.register_blueprint(avaliacoes_agendamento_bp, url_prefix='/api')
 
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    return jsonify({"status": "ok", "message": "Mente Leve API está funcionando"}), 200
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
-@app.route('/', defaults={'path': ''})
+@app.route('/')
+def index():
+    return send_from_directory(os.path.join(os.path.dirname(__file__), 'static'), 'index.html')
+
 @app.route('/<path:path>')
 def serve_react_app(path):
     static_folder_path = os.path.join(os.path.dirname(__file__), 'static')

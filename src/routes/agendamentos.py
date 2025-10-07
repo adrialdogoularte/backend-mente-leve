@@ -111,6 +111,31 @@ def get_my_agendamentos():
 
     return jsonify(agendamentos_list), 200
 
+@agendamentos_bp.route("/agendamentos/psicologo", methods=["GET"])
+@jwt_required()
+def get_agendamentos_psicologo():
+    """Rota específica para psicólogos visualizarem seus agendamentos"""
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+
+    if not user or user.tipo_usuario != "psicologo":
+        return jsonify({"message": "Apenas psicólogos podem acessar esta rota"}), 403
+
+    agendamentos = Agendamento.query.filter_by(psicologo_id=user.id).order_by(
+        Agendamento.data_agendamento.desc(), 
+        Agendamento.hora_agendamento.desc()
+    ).all()
+
+    agendamentos_list = []
+    for agendamento in agendamentos:
+        agendamento_dict = agendamento.to_dict()
+        aluno = User.query.get(agendamento.aluno_id)
+        agendamento_dict["aluno_nome"] = aluno.nome if aluno else "Desconhecido"
+        agendamento_dict["psicologo_nome"] = user.nome
+        agendamentos_list.append(agendamento_dict)
+
+    return jsonify(agendamentos_list), 200
+
 @agendamentos_bp.route("/psicologos", methods=["GET"])
 def get_psicologos_api():
     psicologos = User.query.filter_by(tipo_usuario="psicologo", ativo=True).all()
@@ -125,4 +150,3 @@ def get_psicologos_api():
         }
         for p in psicologos
     ]), 200
-
