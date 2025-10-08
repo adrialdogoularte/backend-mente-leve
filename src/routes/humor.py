@@ -4,7 +4,7 @@ from src.extensions import db
 from src.models.humor import RegistroHumor
 from src.utils.cache import HumorCache
 import json
-from datetime import datetime
+from datetime import datetime, date
 
 humor_bp = Blueprint("humor", __name__)
 
@@ -30,9 +30,7 @@ def registrar_humor():
             qualidade_sono=data.get("qualidade_sono"),
             nivel_estresse=data.get("nivel_estresse"),
             notas=data.get("notas"),
-            data_registro=datetime.strptime(data.get("data_registro"), 
-                                            "%Y-%m-%d") if data.get("data_registro") else datetime.now()
-        )
+            data_registro=datetime.strptime(data.get("data_registro"), "%Y-%m-%d").date() if data.get("data_registro") else datetime.now().date()        )
         db.session.add(novo_registro)
         db.session.commit()
         
@@ -117,10 +115,10 @@ def get_tendencias_humor():
     """Nova rota otimizada para tendências de humor"""
     try:
         user_id = get_jwt_identity()
-        days = request.args.get('days', 30, type=int)
+        days = request.args.get("days", 30, type=int)
         
         # Consulta otimizada com limite de data
-        from datetime import datetime, timedelta
+        from datetime import datetime, date, timedelta
         data_limite = datetime.now().date() - timedelta(days=days)
         
         registros = RegistroHumor.query.filter(

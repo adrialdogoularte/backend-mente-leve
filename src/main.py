@@ -49,14 +49,15 @@ CORS(app, origins=[
     'http://127.0.0.1:5173',
     'http://localhost:5000',
     'http://127.0.0.1:5000',
-    'http://192.168.5.237:5173', # Adicionar o IP específico do frontend
-    'http://192.168.5.237:5000', # Adicionar o IP específico do backend
+    'http://192.168.5.237:5173',
+    'http://192.168.5.237:5000',
+    'http://172.17.5.48:5173', # Adicionar o IP específico do frontend
+    'http://172.17.5.48:5000', # Adicionar o IP específico do backend
     # Adicione outros IPs da rede local se necessário, seguindo o padrão:
     # r'http://192\\.168\\.\\d+\\.\\d+:5173',
     # r'http://10\\.\\d+\\.\\d+\\.\\d+:5173',
     # r'http://172\\.(1[6-9]|2[0-9]|3[01] )\\.\\d+\\.\\d+:5173',
-    # Para o Manus VM
-    'https://5173-iuf2yluhtv4cnzto7euul-61c0e69f.manusvm.computer'
+    
 ], supports_credentials=True )
 
 # Registrar blueprints
