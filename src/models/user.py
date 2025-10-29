@@ -26,6 +26,13 @@ class User(db.Model):
     ativo = db.Column(db.Boolean, default=True)
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Campos de consentimento (NOVOS CAMPOS)
+    consentimento_termos = db.Column(db.Boolean, default=False, nullable=False)
+    consentimento_politica = db.Column(db.Boolean, default=False, nullable=False)
+    data_consentimento = db.Column(db.DateTime)
+    versao_termos = db.Column(db.String(20))
+    versao_politica = db.Column(db.String(20))
     
     def set_password(self, password):
         """Define a senha do usuário"""
@@ -49,6 +56,12 @@ class User(db.Model):
             'especialidades': self.especialidades,
             'modalidades_atendimento': self.modalidades_atendimento,
             'disponibilidade': self.disponibilidade,
+            # Campos de Consentimento (Adicionados)
+            'consentimento_termos': self.consentimento_termos,
+            'consentimento_politica': self.consentimento_politica,
+            'data_consentimento': self.data_consentimento.isoformat() if self.data_consentimento else None,
+            'versao_termos': self.versao_termos,
+            'versao_politica': self.versao_politica,
             'ativo': self.ativo,
             'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
             'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt, decode_token
 from src.models.user import db, User
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -15,10 +15,13 @@ def registro_aluno():
         data = request.get_json()
         
         # Validar dados obrigatórios para aluno
-        required_fields = ["nome", "email", "senha", "universidade", "curso", "periodo"]
+        required_fields = ["nome", "email", "senha", "universidade", "curso", "periodo", "consentimentoTermos", "consentimentoPolitica", "versaoTermos", "versaoPolitica"]
         for field in required_fields:
             if not data.get(field):
                 return jsonify({"message": f"Campo {field} é obrigatório"}), 400
+        
+        if not data["consentimentoTermos"] or not data["consentimentoPolitica"]:
+            return jsonify({"message": "É obrigatório consentir com os Termos de Uso e a Política de Privacidade"}), 400
         
         # Verificar se email já existe
         if User.query.filter_by(email=data["email"]).first():
@@ -35,7 +38,13 @@ def registro_aluno():
             crp=None, # Definir como None para alunos
             especialidades=[], # Definir como lista vazia para alunos
             modalidades_atendimento=[], # Definir como lista vazia para alunos
-            disponibilidade={} # Definir como dicionário vazio para alunos
+            disponibilidade={}, # Definir como dicionário vazio para alunos
+            # Campos de Consentimento
+            consentimento_termos=data["consentimentoTermos"],
+            consentimento_politica=data["consentimentoPolitica"],
+            data_consentimento=datetime.utcnow(),
+            versao_termos=data["versaoTermos"],
+            versao_politica=data["versaoPolitica"]
         )
         user.set_password(data["senha"])
         
@@ -70,10 +79,13 @@ def registro_psicologo():
         data = request.get_json()
         
         # Validar dados obrigatórios para psicólogo
-        required_fields = ["nome", "email", "senha", "crp"]
+        required_fields = ["nome", "email", "senha", "crp", "consentimentoTermos", "consentimentoPolitica", "versaoTermos", "versaoPolitica"]
         for field in required_fields:
             if not data.get(field):
                 return jsonify({"message": f"Campo {field} é obrigatório"}), 400
+        
+        if not data["consentimentoTermos"] or not data["consentimentoPolitica"]:
+            return jsonify({"message": "É obrigatório consentir com os Termos de Uso e a Política de Privacidade"}), 400
 
         if not data.get("especialidades") or not isinstance(data.get("especialidades"), list) or len(data.get("especialidades")) == 0:
             return jsonify({"message": "Pelo menos uma especialidade é obrigatória"}), 400
@@ -93,7 +105,13 @@ def registro_psicologo():
             crp=data["crp"],
             especialidades=data["especialidades"],
             modalidades_atendimento=data["modalidades_atendimento"],
-            disponibilidade=data.get("disponibilidade", {}) # Adicionar disponibilidade
+            disponibilidade=data.get("disponibilidade", {}), # Adicionar disponibilidade
+            # Campos de Consentimento
+            consentimento_termos=data["consentimentoTermos"],
+            consentimento_politica=data["consentimentoPolitica"],
+            data_consentimento=datetime.utcnow(),
+            versao_termos=data["versaoTermos"],
+            versao_politica=data["versaoPolitica"]
         )
         
         user.set_password(data["senha"])
@@ -127,17 +145,20 @@ def login():
     """Faz login do usuário"""
     try:
         data = request.get_json()
+        email = data.get("email")
+        senha = data.get("senha")
         
-        if not data.get("email") or not data.get("senha"):
+        if not email or not senha:
             return jsonify({"message": "Email e senha são obrigatórios"}), 400
         
-        user = User.query.filter_by(email=data["email"]).first()
+        user = User.query.filter_by(email=email).first()
         
-        if not user or not user.check_password(data["senha"]):
-            return jsonify({"message": "Email ou senha incorretos"}), 401
+        if not user or not user.check_password(senha):
+            return jsonify({"message": "Credenciais inválidas"}), 401
         
+        # Verificar se o usuário está ativo
         if not user.ativo:
-            return jsonify({"message": "Usuário inativo"}), 401
+            return jsonify({"message": "Sua conta está inativa. Entre em contato com o suporte."}), 403
         
         # Criar tokens
         access_token = create_access_token(
@@ -162,7 +183,7 @@ def login():
 @auth_bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
-    """Renova o token de acesso"""
+    """Gera um novo access token a partir do refresh token"""
     try:
         current_user_id = get_jwt_identity()
         user = User.query.get(int(current_user_id))  # Converter para int
@@ -184,6 +205,7 @@ def refresh():
 
 @auth_bp.route("/refresh-token", methods=["POST"])
 def refresh_with_body():
+    """Endpoint para receber o refresh token no corpo da requisição (útil para alguns frontends)"""
     try:
         data = request.get_json() or {}
         token = data.get("refresh_token")
@@ -199,6 +221,7 @@ def refresh_with_body():
         if not user or not user.ativo:
             return jsonify({"message": "Usuário não encontrado ou inativo"}), 404
 
+        # Criar novo access token
         new_token = create_access_token(identity=user_id, expires_delta=timedelta(hours=1))
         return jsonify({"access_token": new_token}), 200
 
@@ -237,19 +260,25 @@ def get_current_user():
 @auth_bp.route("/psicologo/disponibilidade", methods=["PUT"])
 @jwt_required()
 def update_psicologo_disponibilidade():
-    current_user_id = get_jwt_identity()
-    user = User.query.get(int(current_user_id))
-
-    if not user or user.tipo_usuario != "psicologo":
-        return jsonify({"message": "Acesso negado. Somente psicólogos podem atualizar a disponibilidade."}), 403
-
-    data = request.get_json()
-    disponibilidade = data.get("disponibilidade")
-
-    if not isinstance(disponibilidade, dict):
-        return jsonify({"message": "Formato de disponibilidade inválido."}), 400
-
-    user.disponibilidade = disponibilidade
-    db.session.commit()
-
-    return jsonify({"message": "Disponibilidade atualizada com sucesso", "user": user.to_dict()}), 200
+    """Atualiza a disponibilidade de um psicólogo"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(int(current_user_id))
+    
+        if not user or user.tipo_usuario != "psicologo":
+            return jsonify({"message": "Acesso negado. Somente psicólogos podem atualizar a disponibilidade."}), 403
+    
+        data = request.get_json()
+        disponibilidade = data.get("disponibilidade")
+    
+        if not isinstance(disponibilidade, dict):
+            return jsonify({"message": "Formato de disponibilidade inválido."}), 400
+    
+        user.disponibilidade = disponibilidade
+        db.session.commit()
+    
+        return jsonify({"message": "Disponibilidade atualizada com sucesso", "user": user.to_dict()}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Erro interno: {str(e)}"}), 500
