@@ -27,7 +27,7 @@ class User(db.Model):
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Campos de consentimento (NOVOS CAMPOS)
+    # Campos de consentimento
     consentimento_termos = db.Column(db.Boolean, default=False, nullable=False)
     consentimento_politica = db.Column(db.Boolean, default=False, nullable=False)
     data_consentimento = db.Column(db.DateTime)
@@ -56,7 +56,6 @@ class User(db.Model):
             'especialidades': self.especialidades,
             'modalidades_atendimento': self.modalidades_atendimento,
             'disponibilidade': self.disponibilidade,
-            # Campos de Consentimento (Adicionados)
             'consentimento_termos': self.consentimento_termos,
             'consentimento_politica': self.consentimento_politica,
             'data_consentimento': self.data_consentimento.isoformat() if self.data_consentimento else None,
@@ -66,6 +65,11 @@ class User(db.Model):
             'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
             'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None
         }
+    
+    def delete_account(self):
+        """Exclui o usuário do banco de dados (Direito ao Esquecimento)"""
+        db.session.delete(self)
+        db.session.commit()
     
     def __repr__(self):
         return f'<User {self.email}>'

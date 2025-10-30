@@ -145,20 +145,17 @@ def login():
     """Faz login do usuário"""
     try:
         data = request.get_json()
-        email = data.get("email")
-        senha = data.get("senha")
         
-        if not email or not senha:
+        if not data.get("email") or not data.get("senha"):
             return jsonify({"message": "Email e senha são obrigatórios"}), 400
         
-        user = User.query.filter_by(email=email).first()
+        user = User.query.filter_by(email=data["email"]).first()
         
-        if not user or not user.check_password(senha):
-            return jsonify({"message": "Credenciais inválidas"}), 401
+        if not user or not user.check_password(data["senha"]):
+            return jsonify({"message": "Email ou senha incorretos"}), 401
         
-        # Verificar se o usuário está ativo
         if not user.ativo:
-            return jsonify({"message": "Sua conta está inativa. Entre em contato com o suporte."}), 403
+            return jsonify({"message": "Usuário inativo"}), 401
         
         # Criar tokens
         access_token = create_access_token(
@@ -183,7 +180,7 @@ def login():
 @auth_bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
-    """Gera um novo access token a partir do refresh token"""
+    """Renova o token de acesso"""
     try:
         current_user_id = get_jwt_identity()
         user = User.query.get(int(current_user_id))  # Converter para int
@@ -205,7 +202,6 @@ def refresh():
 
 @auth_bp.route("/refresh-token", methods=["POST"])
 def refresh_with_body():
-    """Endpoint para receber o refresh token no corpo da requisição (útil para alguns frontends)"""
     try:
         data = request.get_json() or {}
         token = data.get("refresh_token")
@@ -221,7 +217,6 @@ def refresh_with_body():
         if not user or not user.ativo:
             return jsonify({"message": "Usuário não encontrado ou inativo"}), 404
 
-        # Criar novo access token
         new_token = create_access_token(identity=user_id, expires_delta=timedelta(hours=1))
         return jsonify({"access_token": new_token}), 200
 
@@ -282,3 +277,24 @@ def update_psicologo_disponibilidade():
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": f"Erro interno: {str(e)}"}), 500
+
+@auth_bp.route("/delete-account", methods=["DELETE"])
+@jwt_required()
+def delete_account():
+    """Implementa o Direito ao Esquecimento (exclusão total da conta)"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(int(current_user_id))
+
+        if not user:
+            return jsonify({"message": "Usuário não encontrado"}), 404
+        
+        # Exclui o usuário do banco de dados
+        user.delete_account()
+
+        # O logout no frontend será feito após o sucesso desta requisição
+        return jsonify({"message": "Conta excluída permanentemente (Direito ao Esquecimento)"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Erro interno ao excluir conta: {str(e)}"}), 500
