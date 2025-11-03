@@ -3,10 +3,72 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.extensions import db
 from src.models.agendamento import Agendamento
 from src.models.user import User
-from datetime import datetime
+from datetime import datetime, timedelta, date, time
 import uuid
 
 agendamentos_bp = Blueprint("agendamentos", __name__)
+
+def get_available_times_for_psicologo(psicologo_id, disponibilidade):
+    """
+    Filtra os horários de disponibilidade de um psicólogo, removendo aqueles que já estão agendados.
+    A disponibilidade retornada é um dicionário onde a chave é o dia da semana (ex: 'monday')
+    e o valor é um dicionário de datas (ISO format) e seus horários disponíveis.
+    """
+    
+    # 1. Obter todos os agendamentos futuros confirmados ou pendentes para este psicólogo
+    # Consideramos 'Pendente' e 'Confirmado' como horários ocupados.
+    agendamentos_ocupados = Agendamento.query.filter(
+        Agendamento.psicologo_id == psicologo_id,
+        Agendamento.status.in_(['Pendente', 'Confirmado']),
+        Agendamento.data_agendamento >= date.today() # Apenas agendamentos futuros ou de hoje
+    ).all()
+
+    # 2. Criar um conjunto de (data, hora) dos agendamentos ocupados para consulta rápida
+    horarios_ocupados = set()
+    for agendamento in agendamentos_ocupados:
+        # Converte a hora para o formato de string "HH:MM" que está na disponibilidade
+        hora_str = agendamento.hora_agendamento.strftime("%H:%M")
+        horarios_ocupados.add((agendamento.data_agendamento, hora_str))
+
+    # 3. Filtrar a disponibilidade
+    disponibilidade_filtrada = {}
+    
+    # Mapeamento de dia da semana (string em inglês) para o weekday() (0=Segunda, 6=Domingo)
+    dias_semana_map_weekday = {
+        'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3, 
+        'friday': 4, 'saturday': 5, 'sunday': 6
+    }
+    
+    for dia_semana, horarios_do_dia in disponibilidade.items():
+        try:
+            target_weekday = dias_semana_map_weekday[dia_semana]
+        except KeyError:
+            continue
+
+        hoje = date.today()
+        horarios_disponiveis_por_data = {}
+        
+        # Vamos procurar por datas futuras (ex: 30 dias à frente)
+        for i in range(30): # Limitar a 30 dias para evitar processamento excessivo
+            data_futura = hoje + timedelta(days=i)
+            
+            # O weekday() retorna 0 para Segunda, 6 para Domingo
+            if data_futura.weekday() == target_weekday:
+                
+                horarios_disponiveis_na_data = []
+                for hora_str in horarios_do_dia:
+                    # Verificar se o horário já está ocupado
+                    if (data_futura, hora_str) not in horarios_ocupados:
+                        horarios_disponiveis_na_data.append(hora_str)
+                
+                if horarios_disponiveis_na_data:
+                    # Adicionar a lista de horários disponíveis para esta data
+                    horarios_disponiveis_por_data[data_futura.isoformat()] = horarios_disponiveis_na_data
+        
+        if horarios_disponiveis_por_data:
+            disponibilidade_filtrada[dia_semana] = horarios_disponiveis_por_data
+            
+    return disponibilidade_filtrada
 
 @agendamentos_bp.route("/agendamentos", methods=["POST"])
 @jwt_required()
@@ -41,8 +103,19 @@ def create_agendamento():
     except ValueError:
         return jsonify({"message": "Formato de data ou hora inválido. Use YYYY-MM-DD e HH:MM"}), 400
 
+    # Validação: Não permitir agendamento para horários que já passaram
+    agendamento_datetime = datetime.combine(data_agendamento, hora_agendamento)
+    if agendamento_datetime < datetime.now():
+        return jsonify({"message": "Não é possível agendar para um horário que já passou."}), 400
+
     # Verificar se o psicólogo tem disponibilidade para a data e hora
+    # O dia da semana é usado para verificar a disponibilidade geral, mas o filtro
+    # de horários ocupados já garante que o horário não está mais disponível.
     dia_semana = data_agendamento.strftime("%A").lower() # Ex: "monday"
+    
+    # A verificação de disponibilidade deve ser feita com base na disponibilidade filtrada
+    # Para simplificar, vamos manter a verificação original, mas o frontend deve usar a rota /psicologos
+    # para obter os horários disponíveis.
     if psicologo.disponibilidade and dia_semana in psicologo.disponibilidade:
         horarios_disponiveis_no_dia = psicologo.disponibilidade[dia_semana]
         if hora_agendamento_str not in horarios_disponiveis_no_dia:
@@ -51,6 +124,7 @@ def create_agendamento():
         return jsonify({"message": "Psicólogo não tem disponibilidade para o dia selecionado."}), 400
 
     # Verificar se já existe um agendamento para o mesmo psicólogo, data e hora
+    # Esta verificação é crucial e garante que o agendamento não seja duplicado.
     agendamento_existente = Agendamento.query.filter_by(
         psicologo_id=psicologo_id,
         data_agendamento=data_agendamento,
@@ -139,14 +213,19 @@ def get_agendamentos_psicologo():
 @agendamentos_bp.route("/psicologos", methods=["GET"])
 def get_psicologos_api():
     psicologos = User.query.filter_by(tipo_usuario="psicologo", ativo=True).all()
-    return jsonify([
-        {
+    
+    psicologos_list = []
+    for p in psicologos:
+        # Chama a nova função para obter a disponibilidade filtrada
+        disponibilidade_filtrada = get_available_times_for_psicologo(p.id, p.disponibilidade if p.disponibilidade else {})
+        
+        psicologos_list.append({
             "id": p.id,
             "name": p.nome,
             "specialty": p.especialidades[0] if p.especialidades else "Geral", # Assumindo que especialidades é uma lista
-            "availability": p.disponibilidade if p.disponibilidade else {},
+            "availability": disponibilidade_filtrada,
             "description": "", # Será preenchido no frontend ou por outra lógica
             "modes": p.modalidades_atendimento if p.modalidades_atendimento else []
-        }
-        for p in psicologos
-    ]), 200
+        })
+    
+    return jsonify(psicologos_list), 200
