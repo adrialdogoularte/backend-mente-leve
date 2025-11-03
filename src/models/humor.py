@@ -1,6 +1,8 @@
 from src.extensions import db
 from datetime import datetime
 import json
+from src.models.user import User
+from src.models.user import User
 
 class RegistroHumor(db.Model):
     __tablename__ = 'registros_humor'
@@ -35,12 +37,8 @@ class RegistroHumor(db.Model):
     
     # Campos de controle
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
-    data_registro = db.Column(db.Date, nullable=False)  # Data do dia que está sendo registrado
-    
-    # Relacionamento com usuário
-    # CORREÇÃO: Adicionado cascade="all, delete-orphan"
-    usuario = db.relationship('User', backref=db.backref('registros_humor', lazy=True, cascade="all, delete-orphan"))
-    
+    data_registro = db.Column(db.Date, nullable=False)  # Data do dia que está sendo registrado    # Relacionamento com usuário (definido em User.py para exclusão em cascata)
+    # usuario = db.relationship('User', backref=db.backref('registros_humor', lazy=True, cascade="all, delete-orphan"))    
     def set_emocoes(self, emocoes_list):
         """Define as emoções do registro"""
         self.emocoes = json.dumps(emocoes_list) if emocoes_list else None

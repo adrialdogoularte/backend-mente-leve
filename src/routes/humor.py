@@ -45,7 +45,7 @@ def registrar_humor():
 @humor_bp.route("/humor", methods=["GET"])
 @jwt_required()
 def get_registros_humor():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     limite = request.args.get("limite", 10, type=int)
 
     try:
@@ -54,7 +54,8 @@ def get_registros_humor():
         return jsonify({"registros": registros}), 200
     except Exception as e:
         # Fallback para consulta direta se cache falhar
-        query = RegistroHumor.query.filter_by(usuario_id=user_id).order_by(RegistroHumor.data_registro.desc())
+        query = RegistroHumor.query.filter_by(usuario_id=user_id).order_by(RegistroHumor.data_criacao.desc()) # Ordenar por data_criacao para garantir a ordem correta
+        # O campo data_registro é apenas a data, data_criacao tem a hora e é mais preciso para "recentes"
         if limite:
             query = query.limit(limite)
         registros = query.all()
@@ -63,7 +64,7 @@ def get_registros_humor():
 @humor_bp.route("/humor/estatisticas", methods=["GET"])
 @jwt_required()
 def get_estatisticas_humor():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     
     try:
         # Usar cache para estatísticas
@@ -114,7 +115,7 @@ def get_estatisticas_humor():
 def get_tendencias_humor():
     """Nova rota otimizada para tendências de humor"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         days = request.args.get("days", 30, type=int)
         
         # Consulta otimizada com limite de data
@@ -146,6 +147,8 @@ def get_tendencias_humor():
 def get_cache_stats():
     """Rota para monitorar estatísticas do cache (apenas para debug)"""
     try:
+        user_id = int(get_jwt_identity()) # Adicionado para evitar erro de lint, embora não seja usado
+        from src.utils.cache import get_cache_stats
         from src.utils.cache import get_cache_stats
         stats = get_cache_stats()
         return jsonify(stats), 200

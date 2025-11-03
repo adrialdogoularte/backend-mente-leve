@@ -252,6 +252,45 @@ def get_current_user():
     except Exception as e:
         return jsonify({"message": f"Erro interno: {str(e)}"}), 500
 
+@auth_bp.route("/perfil", methods=["PUT"])
+@jwt_required()
+def update_perfil():
+    """Atualiza os dados do perfil do usuário (aluno ou psicólogo)"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(int(current_user_id))
+
+        if not user:
+            return jsonify({"message": "Usuário não encontrado"}), 404
+
+        data = request.get_json()
+
+        # Campos comuns
+        user.nome = data.get("nome", user.nome)
+        # O email não deve ser alterado aqui, pois é a chave de login.
+
+        if user.tipo_usuario == "aluno":
+            user.universidade = data.get("universidade", user.universidade)
+            user.curso = data.get("curso", user.curso)
+            user.periodo = data.get("periodo", user.periodo)
+        
+        elif user.tipo_usuario == "psicologo":
+            user.crp = data.get("crp", user.crp)
+            # A especialidade é enviada como lista do frontend, mas o frontend envia como string separada por vírgula.
+            # No frontend (Perfil.jsx), a lógica de conversão está correta.
+            # Aqui, o backend espera uma lista de strings.
+            especialidades = data.get("especialidades")
+            if especialidades is not None:
+                user.especialidades = especialidades
+
+        db.session.commit()
+
+        return jsonify({"message": "Perfil atualizado com sucesso", "user": user.to_dict()}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Erro interno: {str(e)}"}), 500
+
 @auth_bp.route("/psicologo/disponibilidade", methods=["PUT"])
 @jwt_required()
 def update_psicologo_disponibilidade():

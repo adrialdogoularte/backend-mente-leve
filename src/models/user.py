@@ -27,6 +27,12 @@ class User(db.Model):
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Relacionamento com Registros de Humor (para exclusão em cascata)
+    registros_humor = db.relationship('RegistroHumor', backref='usuario', lazy=True, cascade="all, delete-orphan")
+
+    # Relacionamento com Registros de Humor (para exclusão em cascata)
+    registros_humor = db.relationship('RegistroHumor', backref='usuario', lazy=True, cascade="all, delete-orphan")
+
     # Campos de consentimento
     consentimento_termos = db.Column(db.Boolean, default=False, nullable=False)
     consentimento_politica = db.Column(db.Boolean, default=False, nullable=False)
