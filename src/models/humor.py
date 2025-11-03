@@ -6,7 +6,8 @@ class RegistroHumor(db.Model):
     __tablename__ = 'registros_humor'
     
     id = db.Column(db.Integer, primary_key=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # CORREÇÃO: Adicionado ondelete='CASCADE'
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     
     # Dados do humor
     nivel_humor = db.Column(db.Integer, nullable=False)  # 1-5 (muito ruim a muito bom)
@@ -37,7 +38,8 @@ class RegistroHumor(db.Model):
     data_registro = db.Column(db.Date, nullable=False)  # Data do dia que está sendo registrado
     
     # Relacionamento com usuário
-    usuario = db.relationship('User', backref=db.backref('registros_humor', lazy=True))
+    # CORREÇÃO: Adicionado cascade="all, delete-orphan"
+    usuario = db.relationship('User', backref=db.backref('registros_humor', lazy=True, cascade="all, delete-orphan"))
     
     def set_emocoes(self, emocoes_list):
         """Define as emoções do registro"""
@@ -92,4 +94,3 @@ class RegistroHumor(db.Model):
     
     def __repr__(self):
         return f'<RegistroHumor {self.id} - {self.data_registro}>'
-

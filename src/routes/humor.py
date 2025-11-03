@@ -30,7 +30,7 @@ def registrar_humor():
             qualidade_sono=data.get("qualidade_sono"),
             nivel_estresse=data.get("nivel_estresse"),
             notas=data.get("notas"),
-            data_registro=datetime.strptime(data.get("data_registro"), "%Y-%m-%d").date() if data.get("data_registro") else datetime.now().date()        )
+            data_registro=datetime.fromisoformat(data.get("data_registro").replace('Z', '+00:00')) if data.get("data_registro") else datetime.now()        )
         db.session.add(novo_registro)
         db.session.commit()
         
