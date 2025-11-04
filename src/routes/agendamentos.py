@@ -124,15 +124,31 @@ def create_agendamento():
         return jsonify({"message": "Psicólogo não tem disponibilidade para o dia selecionado."}), 400
 
     # Verificar se já existe um agendamento para o mesmo psicólogo, data e hora
-    # Esta verificação é crucial e garante que o agendamento não seja duplicado.
-    agendamento_existente = Agendamento.query.filter_by(
+    # 1. Verificar se já existe um agendamento para o mesmo psicólogo, data e hora (evita duplicidade)
+    agendamento_psicologo_existente = Agendamento.query.filter_by(
         psicologo_id=psicologo_id,
         data_agendamento=data_agendamento,
         hora_agendamento=hora_agendamento
     ).first()
 
-    if agendamento_existente:
-        return jsonify({"message": "Este horário já está agendado. Por favor, escolha outro."}), 409
+    if agendamento_psicologo_existente:
+        return jsonify({"message": "Você já possui consulta agendada para esse mesmo dia e horário"}), 409
+
+    # 2. Validação: Verificar se o aluno já tem um agendamento com qualquer psicólogo na mesma data e hora
+    agendamento_aluno_existente = Agendamento.query.filter(
+        Agendamento.aluno_id == aluno.id,
+        Agendamento.data_agendamento == data_agendamento,
+        Agendamento.hora_agendamento == hora_agendamento,
+        Agendamento.status.in_(['Pendente', 'Confirmado']) # Considerar apenas agendamentos ativos
+    ).first()
+
+    if agendamento_aluno_existente:
+        # Se o agendamento existente for com um psicólogo diferente do que está sendo agendado
+        psicologo_agendado = User.query.get(agendamento_aluno_existente.psicologo_id)
+        psicologo_nome = psicologo_agendado.nome if psicologo_agendado else "outro psicólogo"
+        return jsonify({
+            "message": "Você já possui consulta agendada para esse mesmo dia e horário. Tente novamente com outra data ou horário.",
+        }), 409
 
     link_videoconferencia = None
     if modalidade == 'online':
