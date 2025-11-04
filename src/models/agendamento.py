@@ -12,7 +12,8 @@ class Agendamento(db.Model):
     modalidade = db.Column(db.String(50), nullable=False) # 'online' ou 'presencial'
     notas = db.Column(db.Text)
     permitir_acesso_avaliacoes = db.Column(db.Boolean, default=False)
-    status = db.Column(db.String(50), default='Pendente') # 'Pendente', 'Confirmado', 'Cancelado'
+    status = db.Column(db.String(50), default='Pendente') # 'Pendente', 'Confirmado', 'Cancelado', 'Finalizado'
+    compareceu = db.Column(db.Boolean, nullable=True) # True, False ou None (ainda não finalizado)
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     link_videoconferencia = db.Column(db.String(255), nullable=True) # Novo campo para o link da videochamada
@@ -31,8 +32,8 @@ class Agendamento(db.Model):
             'notas': self.notas,
             'permitir_acesso_avaliacoes': self.permitir_acesso_avaliacoes,
             'status': self.status,
+            'compareceu': self.compareceu,
             'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
-            'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None,
             'link_videoconferencia': self.link_videoconferencia
         }
 

@@ -245,3 +245,72 @@ def get_psicologos_api():
         })
     
     return jsonify(psicologos_list), 200
+
+
+@agendamentos_bp.route("/agendamentos/<int:agendamento_id>/status", methods=["PUT"])
+@jwt_required()
+def update_agendamento_status(agendamento_id):
+    """
+    Rota para psicólogos atualizarem o status do agendamento (Confirmado, Cancelado, Finalizado)
+    e marcarem o comparecimento do aluno.
+    """
+    current_user_id = get_jwt_identity()
+    psicologo = User.query.get(current_user_id)
+
+    if not psicologo or psicologo.tipo_usuario != "psicologo":
+        return jsonify({"message": "Apenas psicólogos podem alterar o status do agendamento"}), 403
+
+    agendamento = Agendamento.query.get(agendamento_id)
+    if not agendamento:
+        return jsonify({"message": "Agendamento não encontrado"}), 404
+
+    # O psicólogo só pode alterar o status de seus próprios agendamentos
+    if agendamento.psicologo_id != psicologo.id:
+        return jsonify({"message": "Acesso negado. Você não é o psicólogo responsável por este agendamento."}), 403
+
+    data = request.get_json()
+    novo_status = data.get("status")
+    compareceu = data.get("compareceu") # Usado apenas para status 'Finalizado'
+
+    if not novo_status:
+        return jsonify({"message": "Status não fornecido"}), 400
+
+    status_permitidos = ['Pendente', 'Confirmado', 'Cancelado', 'Finalizado']
+    if novo_status not in status_permitidos:
+        return jsonify({"message": f"Status inválido. Status permitidos: {', '.join(status_permitidos)}"}), 400
+
+    # Lógica de transição de status
+    if novo_status == 'Finalizado':
+        # Para finalizar, o status anterior deve ser 'Confirmado'
+        if agendamento.status != 'Confirmado':
+            return jsonify({"message": "O agendamento deve estar 'Confirmado' para ser 'Finalizado'."}), 400
+        
+        # O campo 'compareceu' é obrigatório para finalizar
+        if compareceu is None or not isinstance(compareceu, bool):
+            return jsonify({"message": "O campo 'compareceu' (true/false) é obrigatório para finalizar o agendamento."}), 400
+        
+        agendamento.compareceu = compareceu
+        agendamento.status = novo_status
+        
+    elif novo_status == 'Confirmado':
+        # Apenas permite confirmar se estiver 'Pendente'
+        if agendamento.status != 'Pendente':
+            return jsonify({"message": "O agendamento só pode ser 'Confirmado' se estiver 'Pendente'."}), 400
+        agendamento.status = novo_status
+        
+    elif novo_status == 'Cancelado':
+        # Permite cancelar se estiver 'Pendente' ou 'Confirmado'
+        if agendamento.status not in ['Pendente', 'Confirmado']:
+            return jsonify({"message": "O agendamento só pode ser 'Cancelado' se estiver 'Pendente' ou 'Confirmado'."}), 400
+        agendamento.status = novo_status
+        
+    else:
+        # Para 'Pendente', não deve haver transição direta por esta rota, mas por segurança:
+        if agendamento.status != 'Pendente':
+            return jsonify({"message": "Transição de status inválida para 'Pendente'."}), 400
+        agendamento.status = novo_status
+
+
+    db.session.commit()
+
+    return jsonify({"message": f"Status do agendamento {agendamento_id} atualizado para {novo_status}", "agendamento": agendamento.to_dict()}), 200
