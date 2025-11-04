@@ -5,8 +5,8 @@ class Agendamento(db.Model):
     __tablename__ = 'agendamentos'
 
     id = db.Column(db.Integer, primary_key=True)
-    aluno_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    psicologo_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    aluno_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    psicologo_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     data_agendamento = db.Column(db.Date, nullable=False)
     hora_agendamento = db.Column(db.Time, nullable=False)
     modalidade = db.Column(db.String(50), nullable=False) # 'online' ou 'presencial'
@@ -17,8 +17,8 @@ class Agendamento(db.Model):
     data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     link_videoconferencia = db.Column(db.String(255), nullable=True) # Novo campo para o link da videochamada
 
-    aluno = db.relationship('User', foreign_keys=[aluno_id], backref='agendamentos_feitos')
-    psicologo = db.relationship('User', foreign_keys=[psicologo_id], backref='agendamentos_recebidos')
+    aluno = db.relationship('User', foreign_keys=[aluno_id], backref=db.backref('agendamentos_feitos', cascade="all, delete-orphan"))
+    psicologo = db.relationship('User', foreign_keys=[psicologo_id], backref=db.backref('agendamentos_recebidos', cascade="all, delete-orphan"))
 
     def to_dict(self):
         return {
