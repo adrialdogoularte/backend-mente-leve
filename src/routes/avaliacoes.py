@@ -37,6 +37,9 @@ def criar_avaliacao():
 @avaliacoes_bp.route("/avaliacoes", methods=["GET"])
 @jwt_required()
 def get_avaliacoes():
-    user_id = get_jwt_identity()
-    avaliacoes = Avaliacao.query.filter_by(usuario_id=user_id).order_by(Avaliacao.data_criacao.desc()).all()
-    return jsonify({"avaliacoes": [avaliacao.to_dict() for avaliacao in avaliacoes]}), 200
+    try:
+        user_id = get_jwt_identity()
+        avaliacoes = Avaliacao.query.filter_by(usuario_id=user_id).order_by(Avaliacao.data_criacao.desc()).all()
+        return jsonify({"avaliacoes": [avaliacao.to_dict() for avaliacao in avaliacoes]}), 200
+    except Exception as e:
+        return jsonify({"message": "Erro ao buscar avaliações", "error": str(e)}), 500
