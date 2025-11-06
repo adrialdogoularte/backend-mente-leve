@@ -53,8 +53,10 @@ CORS(app, origins=[
     'http://192.168.5.237:5000',
     'http://172.17.5.48:5173', # Adicionar o IP específico do frontend
     'http://172.17.5.48:5000', 
-     'http://192.168.0.5:5173', # Adicionar o IP específico do frontend
-    'http://192.168.0.5:5000',# Adicionar o IP específico do backend
+    'http://192.168.0.5:5173', # Adicionar o IP específico do frontend
+    'http://192.168.0.5:5000',
+    'http://192.168.1.1:5173', # Adicionar o IP específico do frontend
+    'http://192.168.1.1:5000',# Adicionar o IP específico do backend
     # Adicione outros IPs da rede local se necessário, seguindo o padrão:
     # r'http://192\\.168\\.\\d+\\.\\d+:5173',
     # r'http://10\\.\\d+\\.\\d+\\.\\d+:5173',

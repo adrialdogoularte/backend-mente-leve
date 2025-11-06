@@ -17,6 +17,7 @@ def get_available_times_for_psicologo(psicologo_id, disponibilidade):
     
     # 1. Obter todos os agendamentos futuros confirmados ou pendentes para este psicólogo
     # Consideramos 'Pendente' e 'Confirmado' como horários ocupados.
+    # Agendamentos 'Cancelado' ou 'Finalizado' não ocupam o horário.
     agendamentos_ocupados = Agendamento.query.filter(
         Agendamento.psicologo_id == psicologo_id,
         Agendamento.status.in_(['Pendente', 'Confirmado']),
@@ -129,10 +130,12 @@ def create_agendamento():
         psicologo_id=psicologo_id,
         data_agendamento=data_agendamento,
         hora_agendamento=hora_agendamento
+    ).filter(
+        Agendamento.status.in_(['Pendente', 'Confirmado']) # Apenas agendamentos ativos
     ).first()
 
     if agendamento_psicologo_existente:
-        return jsonify({"message": "Você já possui consulta agendada para esse mesmo dia e horário"}), 409
+        return jsonify({"message": "Horário indisponível. Já existe um agendamento ativo para este psicólogo neste horário."}), 409
 
     # 2. Validação: Verificar se o aluno já tem um agendamento com qualquer psicólogo na mesma data e hora
     agendamento_aluno_existente = Agendamento.query.filter(
