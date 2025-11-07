@@ -47,9 +47,9 @@ jwt = JWTManager(app)
 CORS(app, origins=[
     'http://localhost:5173',
     'http://127.0.0.1:5173',
-    'http://45.180.159.55:8000',
+    'http://45.180.159.55:8000', # Porta externa do Frontend (Regra 2)
+    'http://45.180.159.55:8001', # Porta externa do Backend (Regra 1)
     
-
     # Expressão Regular para permitir qualquer IP na rede 192.168.x.x
     r'http://192\.168\..*',
 
@@ -57,7 +57,7 @@ CORS(app, origins=[
     r'http://10\..*',
 
     # Expressão Regular para permitir qualquer IP na rede 172.16.x.x a 172.31.x.x
-    r'http://172\.(1[6-9]|2[0-9]|3[0-1] )\..*'
+    r'http://172\.(1[6-9]|2[0-9]|3[0-1])\..*'
     
 ], supports_credentials=True )
 

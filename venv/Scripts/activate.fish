@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV 'C:\plataforma-mente-leve-finalizada\plataforma-mente-leve\mente-leve-backend-novo\venv'
+set -gx VIRTUAL_ENV 'C:\mente-leve\backend-mente-leve\venv'
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"Scripts $PATH
