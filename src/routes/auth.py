@@ -1,6 +1,28 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt, decode_token
 from src.models.user import db, User
+import re
+
+def validar_senha_forte(senha):
+    """
+    Verifica se a senha atende aos critérios de segurança:
+    - Mínimo de 8 caracteres
+    - Pelo menos uma letra maiúscula
+    - Pelo menos uma letra minúscula
+    - Pelo menos um número
+    - Pelo menos um caractere especial
+    """
+    if len(senha) < 8:
+        return False, "A senha deve ter no mínimo 8 caracteres."
+    if not re.search(r"[A-Z]", senha):
+        return False, "A senha deve conter pelo menos uma letra maiúscula."
+    if not re.search(r"[a-z]", senha):
+        return False, "A senha deve conter pelo menos uma letra minúscula."
+    if not re.search(r"[0-9]", senha):
+        return False, "A senha deve conter pelo menos um número."
+    if not re.search(r"[!@#$%^&*()_+=\-{}\[\]:;\"'<>,.?/\\|]", senha):
+        return False, "A senha deve conter pelo menos um caractere especial."
+    return True, ""
 from datetime import timedelta, datetime
 
 auth_bp = Blueprint("auth", __name__)
@@ -19,6 +41,12 @@ def registro_aluno():
         for field in required_fields:
             if not data.get(field):
                 return jsonify({"message": f"Campo {field} é obrigatório"}), 400
+        
+        # Validação de senha forte
+        senha = data.get("senha")
+        is_valid, message = validar_senha_forte(senha)
+        if not is_valid:
+            return jsonify({"message": message}), 400
         
         if not data["consentimentoTermos"] or not data["consentimentoPolitica"]:
             return jsonify({"message": "É obrigatório consentir com os Termos de Uso e a Política de Privacidade"}), 400
@@ -83,6 +111,12 @@ def registro_psicologo():
         for field in required_fields:
             if not data.get(field):
                 return jsonify({"message": f"Campo {field} é obrigatório"}), 400
+        
+        # Validação de senha forte
+        senha = data.get("senha")
+        is_valid, message = validar_senha_forte(senha)
+        if not is_valid:
+            return jsonify({"message": message}), 400
         
         if not data["consentimentoTermos"] or not data["consentimentoPolitica"]:
             return jsonify({"message": "É obrigatório consentir com os Termos de Uso e a Política de Privacidade"}), 400
