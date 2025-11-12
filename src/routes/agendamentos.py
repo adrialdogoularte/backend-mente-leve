@@ -274,6 +274,7 @@ def update_agendamento_status(agendamento_id):
     data = request.get_json()
     novo_status = data.get("status")
     compareceu = data.get("compareceu") # Usado apenas para status 'Finalizado'
+    prontuario = data.get("prontuario") # Novo campo para o prontuário do psicólogo
 
     if not novo_status:
         return jsonify({"message": "Status não fornecido"}), 400
@@ -292,7 +293,12 @@ def update_agendamento_status(agendamento_id):
         if compareceu is None or not isinstance(compareceu, bool):
             return jsonify({"message": "O campo 'compareceu' (true/false) é obrigatório para finalizar o agendamento."}), 400
         
+        # O campo 'prontuario' é obrigatório para finalizar
+        if prontuario is None:
+            return jsonify({"message": "O campo 'prontuario' é obrigatório para finalizar o agendamento."}), 400
+        
         agendamento.compareceu = compareceu
+        agendamento.prontuario = prontuario
         agendamento.status = novo_status
         
     elif novo_status == 'Confirmado':

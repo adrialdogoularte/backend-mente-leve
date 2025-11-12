@@ -14,6 +14,7 @@ class Agendamento(db.Model):
     permitir_acesso_avaliacoes = db.Column(db.Boolean, default=False)
     status = db.Column(db.String(50), default='Pendente') # 'Pendente', 'Confirmado', 'Cancelado', 'Finalizado'
     compareceu = db.Column(db.Boolean, nullable=True) # True, False ou None (ainda não finalizado)
+    prontuario = db.Column(db.Text, nullable=True) # Novo campo para o prontuário do psicólogo
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     link_videoconferencia = db.Column(db.String(255), nullable=True) # Novo campo para o link da videochamada
@@ -33,6 +34,7 @@ class Agendamento(db.Model):
             'permitir_acesso_avaliacoes': self.permitir_acesso_avaliacoes,
             'status': self.status,
             'compareceu': self.compareceu,
+            'prontuario': self.prontuario,
             'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
             'link_videoconferencia': self.link_videoconferencia
         }
