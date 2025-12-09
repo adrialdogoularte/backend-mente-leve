@@ -49,8 +49,8 @@ CORS(app, origins=[
     'http://127.0.0.1:5173',
     'http://45.180.159.100:8883', # Porta externa do Frontend (Regra 2)
     'http://45.180.159.100:8884', # Porta externa do Backend (Regra 1)
-    'http://192.168.1.200:5000'
-    'http://192.168.1.200:5173'
+    'http://192.168.1.254:5000'
+    'http://192.168.1.254:5173'
     # Expressão Regular para permitir qualquer IP na rede 192.168.x.x
     r'http://192\.168\..*',
 
